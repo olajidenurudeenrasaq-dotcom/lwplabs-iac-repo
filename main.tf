@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 module "vpc" {
-  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//vpc?ref=main"
+  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//vpc?ref=18a5b902102d0989b8c5987352f6ad1543547ef6"
 
   name                       = var.project_name
   vpc_cidr                   = var.vpc_cidr
@@ -25,7 +25,7 @@ module "vpc" {
 }
 
 module "web_security_group" {
-  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//security-group?ref=main"
+  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//security-group?ref=18a5b902102d0989b8c5987352f6ad1543547ef6"
 
   name        = "${var.project_name}-web-sg"
   description = "Security group for web application access"
@@ -64,7 +64,7 @@ module "web_security_group" {
 }
 
 module "ec2_app" {
-  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//ec2?ref=main"
+  source = "git::https://github.com/olajidenurudeenrasaq-dotcom/AWS-Modules.git//ec2?ref=18a5b902102d0989b8c5987352f6ad1543547ef6"
 
   name                        = "${var.project_name}-app"
   instance_type               = var.instance_type
