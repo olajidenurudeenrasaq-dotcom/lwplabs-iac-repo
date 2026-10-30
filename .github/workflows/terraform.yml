@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "**.tf"
+      - "terraform.tfvars"
+      - "modules/**"
   workflow_dispatch:
 
 jobs:
