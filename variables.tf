@@ -31,7 +31,7 @@ variable "public_subnets" {
 variable "private_subnets" {
   description = "Private subnet CIDR blocks"
   type        = list(string)
-  default     = ["10.0.10.0/24"]
+  default     = ["10.0.11.0/24"]
 }
 
 variable "availability_zones" {
