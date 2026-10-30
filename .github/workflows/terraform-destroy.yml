@@ -56,8 +56,26 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan Destroy
-        run: terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan
+      - name: Plan and apply destroy with one dependency retry
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            echo "Terraform destroy attempt ${attempt}/2"
 
-      - name: Terraform Apply Destroy Plan
-        run: terraform apply -auto-approve tfplan
+            if ! terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan; then
+              echo "Terraform destroy planning failed."
+              exit 1
+            fi
+
+            if terraform apply -auto-approve -parallelism=1 tfplan; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 2 ]; then
+              echo "Terraform destroy failed on both attempts. Review remaining AWS dependencies before retrying."
+              exit 1
+            fi
+
+            echo "Destroy encountered an AWS dependency error. Waiting 30 seconds, then replanning remaining resources."
+            sleep 30
+          done
