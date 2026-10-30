@@ -59,6 +59,8 @@ module "web_security_group" {
     Project     = var.project_name
     Environment = var.environment
   }
+
+  depends_on = [module.vpc]
 }
 
 module "ec2_app" {
@@ -75,4 +77,6 @@ module "ec2_app" {
     Environment = var.environment
     Name        = "${var.project_name}-app"
   }
+
+  depends_on = [module.vpc]
 }

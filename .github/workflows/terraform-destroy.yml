@@ -56,8 +56,43 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan Destroy
-        run: terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan
+      - name: Plan and apply destroy with one dependency retry
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            echo "Terraform destroy attempt ${attempt}/2"
 
-      - name: Terraform Apply Destroy Plan
-        run: terraform apply -auto-approve tfplan
+            if ! terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan; then
+              echo "Terraform destroy planning failed."
+              exit 1
+            fi
+
+            if terraform apply -auto-approve -parallelism=1 tfplan; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 2 ]; then
+              echo "Terraform destroy failed on both attempts. Current AWS dependencies in the managed VPC:"
+              VPC_ID=$(terraform output -raw vpc_id)
+              aws ec2 describe-network-interfaces \
+                --filters "Name=vpc-id,Values=$VPC_ID" \
+                --query 'NetworkInterfaces[].{Id:NetworkInterfaceId,Status:Status,Description:Description,Instance:Attachment.InstanceId,Subnet:SubnetId,Groups:Groups[].GroupId,PublicIp:Association.PublicIp}' \
+                --output table
+              aws ec2 describe-subnets \
+                --filters "Name=vpc-id,Values=$VPC_ID" \
+                --query 'Subnets[].{Id:SubnetId,State:State,MapPublicIp:MapPublicIpOnLaunch}' \
+                --output table
+              aws ec2 describe-route-tables \
+                --filters "Name=vpc-id,Values=$VPC_ID" \
+                --query 'RouteTables[].{Id:RouteTableId,Associations:Associations[].{Subnet:SubnetId,Main:Main},Routes:Routes[].{Destination:DestinationCidrBlock,Gateway:GatewayId,Nat:NatGatewayId}}' \
+                --output json
+              aws ec2 describe-network-acls \
+                --filters "Name=vpc-id,Values=$VPC_ID" \
+                --query 'NetworkAcls[].{Id:NetworkAclId,Default:IsDefault,Associations:Associations[].SubnetId}' \
+                --output json
+              exit 1
+            fi
+
+            echo "Destroy encountered an AWS dependency error. Waiting 30 seconds, then replanning remaining resources."
+            sleep 30
+          done

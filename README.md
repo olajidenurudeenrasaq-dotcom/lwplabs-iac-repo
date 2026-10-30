@@ -12,6 +12,8 @@ This repository deploys a simple AWS infrastructure stack using reusable Terrafo
 - Security group
 - 1 EC2 instance
 
+The NAT gateway and its Elastic IP incur AWS charges while allocated. Review current regional pricing and run the destroy workflow when the infrastructure is no longer needed.
+
 ## Prerequisites
 
 For local Terraform runs, make sure you have:
@@ -146,7 +148,7 @@ The deployment workflow applies changes automatically; it does not pause for an 
 3. Select the branch containing the workflow. When prompted for `confirm_destroy`, type the exact lowercase keyword `destroy`.
 4. Choose **Run workflow** and follow the run in the Actions tab.
 
-If the confirmation value is not exactly `destroy`, the workflow fails before checking out the code or accessing AWS. When confirmed, it creates and applies a destroy plan without an additional interactive approval. This removes resources managed in the configured Terraform state; it does not delete the S3 backend bucket or state file.
+If the confirmation value is not exactly `destroy`, the workflow fails before checking out the code or accessing AWS. When confirmed, it creates and applies a destroy plan without an additional interactive approval. This removes resources managed in the configured Terraform state; it does not delete the S3 backend bucket or state file. The workflow retries once with a fresh destroy plan and serial resource deletion to allow AWS dependency cleanup to settle. If the retry still fails, inspect the VPC for remaining network interfaces or public IP associations before running the destroy workflow again; do not delete the Terraform state.
 
 ## Module source example
 
